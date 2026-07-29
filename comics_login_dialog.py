@@ -1,4 +1,3 @@
-# login_dialog.py
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QMessageBox
 from comics_db_helper import DB, DB_CONFIG
 

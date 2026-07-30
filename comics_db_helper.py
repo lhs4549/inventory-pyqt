@@ -3,7 +3,7 @@ import pymysql
 DB_CONFIG = dict(
     host="localhost",
     user="root",
-    password="3554demon!",
+    password="4549",
     database="comicdb",
     charset="utf8"
 )

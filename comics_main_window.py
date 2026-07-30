@@ -5,10 +5,11 @@ from comics_db_helper import DB, DB_CONFIG
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, user_id):
         super().__init__()
         self.setWindowTitle("만화책 재고 관리")
         self.db = DB(**DB_CONFIG)
+        self.user_id = user_id      # 로그인한 사용자의 id (이 값 기준으로 내 책만 조회/관리)
         self.selected_id = None
 
         # ---------- 전체 스타일 (서점 느낌: 아이보리 배경 + 브라운 포인트) ----------
@@ -67,13 +68,13 @@ class MainWindow(QMainWindow):
                 color: #2b2b2b;
             }
         """)
- 
+
         central = QWidget()
         self.setCentralWidget(central)
         vbox = QVBoxLayout(central)
         vbox.setContentsMargins(16, 16, 16, 16)
         vbox.setSpacing(12)
- 
+
         # ---------- 입력 필드 (라벨을 입력창 '위'에 배치) ----------
         def make_field(label_text):
             box = QVBoxLayout()
@@ -83,30 +84,32 @@ class MainWindow(QMainWindow):
             box.addWidget(label)
             box.addWidget(line_edit)
             return box, line_edit
- 
-        title_box, self.input_title = make_field("도서명")
+
+        title_box, self.input_title = make_field("제목")
         author_box, self.input_author = make_field("작가")
         volume_box, self.input_volume = make_field("권수")
         price_box, self.input_price = make_field("가격")
         stock_box, self.input_stock = make_field("재고")
- 
-        # 1행: 도서명 + 작가
+
+        # 1행: 제목 + 작가
         row1 = QHBoxLayout()
+        row1.setSpacing(16)
         row1.addLayout(title_box)
         row1.addLayout(author_box)
- 
+
         # 2행: 권수 + 가격 + 재고
         row2 = QHBoxLayout()
+        row2.setSpacing(16)
         row2.addLayout(volume_box)
         row2.addLayout(price_box)
         row2.addLayout(stock_box)
- 
+
         # 입력 필드 전체(1행+2행)를 세로로 묶기
         fields_col = QVBoxLayout()
         fields_col.setSpacing(10)
         fields_col.addLayout(row1)
         fields_col.addLayout(row2)
- 
+
         # ---------- 버튼 (오른쪽, 세로 배치) ----------
         btn_box = QVBoxLayout()
         btn_box.setSpacing(10)
@@ -119,20 +122,21 @@ class MainWindow(QMainWindow):
         btn_box.addWidget(self.btn_add)
         btn_box.addWidget(self.btn_update)
         btn_box.addWidget(self.btn_delete)
- 
+
         self.btn_add.clicked.connect(self.add_comic)
         self.btn_update.clicked.connect(self.update_comic)
         self.btn_delete.clicked.connect(self.delete_comic)
- 
+
         # 입력 필드 + 버튼을 가로로 배치
         form_row = QHBoxLayout()
+        form_row.setSpacing(20)
         form_row.addLayout(fields_col)
         form_row.addLayout(btn_box)
- 
+
         # ---------- 테이블 ----------
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["ID", "도서명", "작가", "권수", "가격", "재고"])
+        self.table.setHorizontalHeaderLabels(["ID", "제목", "작가", "권수", "가격", "재고"])
         self.table.setEditTriggers(self.table.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(self.table.SelectRows)   # 행 전체 선택
@@ -143,22 +147,22 @@ class MainWindow(QMainWindow):
 
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Fixed)       # 기본은 고정 너비
-        header.setSectionResizeMode(1, QHeaderView.Stretch)  # 도서명
+        header.setSectionResizeMode(1, QHeaderView.Stretch)  # 제목
         header.setSectionResizeMode(2, QHeaderView.Stretch)  # 작가
         self.table.setColumnWidth(0, 30)   # ID
         self.table.setColumnWidth(3, 60)   # 권수
         self.table.setColumnWidth(4, 80)   # 가격
         self.table.setColumnWidth(5, 60)   # 재고
         self.table.verticalHeader().setDefaultSectionSize(30)  # 행 높이 여유 있게
- 
+
         vbox.addLayout(form_row)
         vbox.addWidget(self.table)
- 
+
         self.load_comics()
 
     # ---------- 목록 조회 ----------
     def load_comics(self):
-        rows = self.db.fetch_comics()
+        rows = self.db.fetch_comics(self.user_id)
         self.table.setRowCount(len(rows))
         for r, (cid, title, author, volume, price, stock) in enumerate(rows):
             id_item = QTableWidgetItem(str(cid))
@@ -224,7 +228,7 @@ class MainWindow(QMainWindow):
             return
         title, author, volume, price, stock = values
 
-        ok = self.db.insert_comic(title, author, volume, price, stock)
+        ok = self.db.insert_comic(self.user_id, title, author, volume, price, stock)
         if ok:
             QMessageBox.information(self, "완료", "추가되었습니다.")
             self.clear_inputs()
@@ -243,7 +247,7 @@ class MainWindow(QMainWindow):
             return
         title, author, volume, price, stock = values
 
-        ok = self.db.update_comic(self.selected_id, title, author, volume, price, stock)
+        ok = self.db.update_comic(self.selected_id, self.user_id, title, author, volume, price, stock)
         if ok:
             QMessageBox.information(self, "완료", "수정되었습니다.")
             self.clear_inputs()
@@ -264,7 +268,7 @@ class MainWindow(QMainWindow):
         if reply != QMessageBox.Yes:
             return
 
-        ok = self.db.delete_comic(self.selected_id)
+        ok = self.db.delete_comic(self.selected_id, self.user_id)
         if ok:
             QMessageBox.information(self, "완료", "삭제되었습니다.")
             self.clear_inputs()

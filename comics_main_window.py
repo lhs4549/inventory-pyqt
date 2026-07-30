@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, \
     QLabel, QLineEdit, QPushButton, QMessageBox, QHeaderView
+from PyQt5.QtCore import Qt
 from comics_db_helper import DB, DB_CONFIG
 
 
@@ -9,10 +10,69 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("만화책 재고 관리")
         self.db = DB(**DB_CONFIG)
         self.selected_id = None
+
+        # ---------- 전체 스타일 (서점 느낌: 아이보리 배경 + 브라운 포인트) ----------
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f7f5f2;
+                font-family: '맑은 고딕';
+                font-size: 13px;
+                color: #2b2b2b;
+            }
+            QLabel {
+                color: #6b6355;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QLineEdit {
+                background-color: white;
+                border: 1px solid #d8d2c6;
+                border-radius: 4px;
+                padding: 6px 8px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #a8794f;
+            }
+            QPushButton#actionButton {
+                background-color: #a8794f;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton#actionButton:hover {
+                background-color: #96693f;
+            }
+            QPushButton#actionButton:pressed {
+                background-color: #7f5732;
+            }
+            QTableWidget {
+                background-color: white;
+                border: 1px solid #d8d2c6;
+                gridline-color: #c9c0b0;
+                alternate-background-color: #f4efe6;
+            }
+            QHeaderView::section {
+                background-color: #6b5744;
+                color: white;
+                padding: 6px;
+                border: 1px solid #55452f;
+                font-weight: bold;
+            }
+            QTableWidget::item {
+                padding: 4px;
+            }
+            QTableWidget::item:selected {
+                background-color: #d9c4a3;
+                color: #2b2b2b;
+            }
+        """)
  
         central = QWidget()
         self.setCentralWidget(central)
         vbox = QVBoxLayout(central)
+        vbox.setContentsMargins(16, 16, 16, 16)
+        vbox.setSpacing(12)
  
         # ---------- 입력 필드 (라벨을 입력창 '위'에 배치) ----------
         def make_field(label_text):
@@ -54,6 +114,7 @@ class MainWindow(QMainWindow):
         self.btn_update = QPushButton("수정")
         self.btn_delete = QPushButton("삭제")
         for btn in (self.btn_add, self.btn_update, self.btn_delete):
+            btn.setObjectName("actionButton")
             btn.setFixedSize(80, 30)
         btn_box.addWidget(self.btn_add)
         btn_box.addWidget(self.btn_update)
@@ -76,6 +137,8 @@ class MainWindow(QMainWindow):
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(self.table.SelectRows)   # 행 전체 선택
         self.table.setSelectionMode(self.table.SingleSelection)  # 한 번에 한 행만
+        self.table.setAlternatingRowColors(True)                 # 홀짝 행 색 다르게
+        self.table.setShowGrid(True)
         self.table.cellClicked.connect(self.on_row_clicked)
 
         header = self.table.horizontalHeader()
@@ -86,7 +149,7 @@ class MainWindow(QMainWindow):
         self.table.setColumnWidth(3, 60)   # 권수
         self.table.setColumnWidth(4, 80)   # 가격
         self.table.setColumnWidth(5, 60)   # 재고
-
+        self.table.verticalHeader().setDefaultSectionSize(30)  # 행 높이 여유 있게
  
         vbox.addLayout(form_row)
         vbox.addWidget(self.table)
@@ -98,12 +161,21 @@ class MainWindow(QMainWindow):
         rows = self.db.fetch_comics()
         self.table.setRowCount(len(rows))
         for r, (cid, title, author, volume, price, stock) in enumerate(rows):
-            self.table.setItem(r, 0, QTableWidgetItem(str(cid)))
+            id_item = QTableWidgetItem(str(cid))
+            id_item.setTextAlignment(Qt.AlignCenter)
+            volume_item = QTableWidgetItem(str(volume))
+            volume_item.setTextAlignment(Qt.AlignCenter)
+            price_item = QTableWidgetItem(str(price))
+            price_item.setTextAlignment(Qt.AlignCenter)
+            stock_item = QTableWidgetItem(str(stock))
+            stock_item.setTextAlignment(Qt.AlignCenter)
+
+            self.table.setItem(r, 0, id_item)
             self.table.setItem(r, 1, QTableWidgetItem(title))
             self.table.setItem(r, 2, QTableWidgetItem(author))
-            self.table.setItem(r, 3, QTableWidgetItem(str(volume)))
-            self.table.setItem(r, 4, QTableWidgetItem(str(price)))
-            self.table.setItem(r, 5, QTableWidgetItem(str(stock)))
+            self.table.setItem(r, 3, volume_item)
+            self.table.setItem(r, 4, price_item)
+            self.table.setItem(r, 5, stock_item)
 
     # ---------- 행 클릭 시 입력창 자동 채움 ----------
     def on_row_clicked(self, row, col):

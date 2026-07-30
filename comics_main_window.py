@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, \
-    QLabel, QLineEdit, QPushButton, QMessageBox
+    QLabel, QLineEdit, QPushButton, QMessageBox, QHeaderView
 from comics_db_helper import DB, DB_CONFIG
 
 
@@ -8,38 +8,46 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("만화책 재고 관리")
         self.db = DB(**DB_CONFIG)
-
-        # 현재 선택된 행의 id를 저장 (수정/삭제할 때 사용)
         self.selected_id = None
-
-        # 중앙 위젯 및 레이아웃
+ 
         central = QWidget()
         self.setCentralWidget(central)
         vbox = QVBoxLayout(central)
-
-        # 상단: 입력 폼(왼쪽) + 버튼(오른쪽) 가로 배치
-        form_row = QHBoxLayout()
-
-        # 왼쪽: 입력 필드들
-        input_box = QHBoxLayout()
-        self.input_title = QLineEdit()
-        self.input_author = QLineEdit()
-        self.input_volume = QLineEdit()
-        self.input_price = QLineEdit()
-        self.input_stock = QLineEdit()
-
-        input_box.addWidget(QLabel("제목"))
-        input_box.addWidget(self.input_title)
-        input_box.addWidget(QLabel("작가"))
-        input_box.addWidget(self.input_author)
-        input_box.addWidget(QLabel("권수"))
-        input_box.addWidget(self.input_volume)
-        input_box.addWidget(QLabel("가격"))
-        input_box.addWidget(self.input_price)
-        input_box.addWidget(QLabel("재고"))
-        input_box.addWidget(self.input_stock)
-
-        # 오른쪽: 버튼 세로 배치 (일정 간격)
+ 
+        # ---------- 입력 필드 (라벨을 입력창 '위'에 배치) ----------
+        def make_field(label_text):
+            box = QVBoxLayout()
+            box.setSpacing(4)
+            label = QLabel(label_text)
+            line_edit = QLineEdit()
+            box.addWidget(label)
+            box.addWidget(line_edit)
+            return box, line_edit
+ 
+        title_box, self.input_title = make_field("제목")
+        author_box, self.input_author = make_field("작가")
+        volume_box, self.input_volume = make_field("권수")
+        price_box, self.input_price = make_field("가격")
+        stock_box, self.input_stock = make_field("재고")
+ 
+        # 1행: 제목 + 작가
+        row1 = QHBoxLayout()
+        row1.addLayout(title_box)
+        row1.addLayout(author_box)
+ 
+        # 2행: 권수 + 가격 + 재고
+        row2 = QHBoxLayout()
+        row2.addLayout(volume_box)
+        row2.addLayout(price_box)
+        row2.addLayout(stock_box)
+ 
+        # 입력 필드 전체(1행+2행)를 세로로 묶기
+        fields_col = QVBoxLayout()
+        fields_col.setSpacing(10)
+        fields_col.addLayout(row1)
+        fields_col.addLayout(row2)
+ 
+        # ---------- 버튼 (오른쪽, 세로 배치) ----------
         btn_box = QVBoxLayout()
         btn_box.setSpacing(10)
         self.btn_add = QPushButton("추가")
@@ -50,27 +58,34 @@ class MainWindow(QMainWindow):
         btn_box.addWidget(self.btn_add)
         btn_box.addWidget(self.btn_update)
         btn_box.addWidget(self.btn_delete)
-
+ 
         self.btn_add.clicked.connect(self.add_comic)
         self.btn_update.clicked.connect(self.update_comic)
         self.btn_delete.clicked.connect(self.delete_comic)
-
-        form_row.addLayout(input_box)
+ 
+        # 입력 필드 + 버튼을 가로로 배치
+        form_row = QHBoxLayout()
+        form_row.addLayout(fields_col)
         form_row.addLayout(btn_box)
-
-        # 중앙: 테이블 위젯
+ 
+        # ---------- 테이블 ----------
         self.table = QTableWidget()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels(["ID", "제목", "작가", "권수", "가격", "재고"])
-        self.table.setEditTriggers(self.table.NoEditTriggers)  # 목록은 읽기 전용
+        self.table.setEditTriggers(self.table.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
-        self.table.cellClicked.connect(self.on_row_clicked)  # 행 클릭 시 입력창 채우기
+        self.table.setSelectionBehavior(self.table.SelectRows)   # 행 전체 선택
+        self.table.setSelectionMode(self.table.SingleSelection)  # 한 번에 한 행만
+        self.table.cellClicked.connect(self.on_row_clicked)
 
-        # 배치
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)  # 기본은 내용 길이에 맞춤
+        header.setSectionResizeMode(1, QHeaderView.Stretch)        # 제목
+        header.setSectionResizeMode(2, QHeaderView.Stretch)        # 작가
+ 
         vbox.addLayout(form_row)
         vbox.addWidget(self.table)
-
-        # 초기 데이터 로드
+ 
         self.load_comics()
 
     # ---------- 목록 조회 ----------

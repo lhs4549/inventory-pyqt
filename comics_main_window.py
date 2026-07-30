@@ -79,9 +79,14 @@ class MainWindow(QMainWindow):
         self.table.cellClicked.connect(self.on_row_clicked)
 
         header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)  # 기본은 내용 길이에 맞춤
-        header.setSectionResizeMode(1, QHeaderView.Stretch)        # 제목
-        header.setSectionResizeMode(2, QHeaderView.Stretch)        # 작가
+        header.setSectionResizeMode(QHeaderView.Fixed)       # 기본은 고정 너비
+        header.setSectionResizeMode(1, QHeaderView.Stretch)  # 제목
+        header.setSectionResizeMode(2, QHeaderView.Stretch)  # 작가
+        self.table.setColumnWidth(0, 30)   # ID
+        self.table.setColumnWidth(3, 60)   # 권수
+        self.table.setColumnWidth(4, 80)   # 가격
+        self.table.setColumnWidth(5, 60)   # 재고
+
  
         vbox.addLayout(form_row)
         vbox.addWidget(self.table)
@@ -99,7 +104,6 @@ class MainWindow(QMainWindow):
             self.table.setItem(r, 3, QTableWidgetItem(str(volume)))
             self.table.setItem(r, 4, QTableWidgetItem(str(price)))
             self.table.setItem(r, 5, QTableWidgetItem(str(stock)))
-        self.table.resizeColumnsToContents()
 
     # ---------- 행 클릭 시 입력창 자동 채움 ----------
     def on_row_clicked(self, row, col):

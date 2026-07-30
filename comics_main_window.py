@@ -84,13 +84,13 @@ class MainWindow(QMainWindow):
             box.addWidget(line_edit)
             return box, line_edit
  
-        title_box, self.input_title = make_field("제목")
+        title_box, self.input_title = make_field("도서명")
         author_box, self.input_author = make_field("작가")
         volume_box, self.input_volume = make_field("권수")
         price_box, self.input_price = make_field("가격")
         stock_box, self.input_stock = make_field("재고")
  
-        # 1행: 제목 + 작가
+        # 1행: 도서명 + 작가
         row1 = QHBoxLayout()
         row1.addLayout(title_box)
         row1.addLayout(author_box)
@@ -132,7 +132,7 @@ class MainWindow(QMainWindow):
         # ---------- 테이블 ----------
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["ID", "제목", "작가", "권수", "가격", "재고"])
+        self.table.setHorizontalHeaderLabels(["ID", "도서명", "작가", "권수", "가격", "재고"])
         self.table.setEditTriggers(self.table.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(self.table.SelectRows)   # 행 전체 선택
@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
 
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Fixed)       # 기본은 고정 너비
-        header.setSectionResizeMode(1, QHeaderView.Stretch)  # 제목
+        header.setSectionResizeMode(1, QHeaderView.Stretch)  # 도서명
         header.setSectionResizeMode(2, QHeaderView.Stretch)  # 작가
         self.table.setColumnWidth(0, 30)   # ID
         self.table.setColumnWidth(3, 60)   # 권수
